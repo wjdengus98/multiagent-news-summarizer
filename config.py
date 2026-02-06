@@ -10,8 +10,8 @@ class Config:
     # ===== OPENAI 설정 =====
     # 환경변수에서 API 키를 가져오되, 없으면 빈 문자열을 기본값으로 사용
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
-    MODEL_NAME: str = "gpt-4o-mini" # 모델명 설정
-    MAX_TOKENS: int = 150 # 요약 시 최대 토큰 수
+    MODEL_NAME: str = "gpt-4o" # 모델명 설정
+    MAX_TOKENS: int = 300 # 요약 시 최대 토큰 수
     
     # ====== 프로젝트 경로 설정 ======
     # 현재 파일의 위치를 기준으로 프로젝트 루트 경로 설정
