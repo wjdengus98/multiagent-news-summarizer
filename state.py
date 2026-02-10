@@ -22,7 +22,7 @@ class NewsState(BaseModel):
     categorized_news: dict[str, list[dict[str,Any]]] = {}
     
     #6. 리포트를 문자열로 저장
-    fianl_report: str =""
+    final_report: str =""
     
     #7. 에러를 기록
     error_log: list[str] = []
