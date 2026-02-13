@@ -26,28 +26,23 @@ class NewsOrganizerAgent:
         #LLM 초기화
         self.llm = ChatOpenAI(
             model=Config.MODEL_NAME,
-            max_tokens = 50,
-            temperature=0.1
+            max_tokens = 100,
+            temperature=0
         )
         
         # 카테고리 목록(기타 포함)
         self.categories = Config.NEWS_CATEGORIES
         
-        # 분류 프롬프트
-        system_prompt = f"""당신은 뉴스 분류 전문가 입니다.
-        주어진 뉴스를 다음 카테고리 중 정확히 하나로 분류하세요:
+        system_prompt = f"""당신은 뉴스 분류 전문가입니다.
+        주어진 뉴스를 다음 카테고리 중 하나로 정확히 분류해주세요:
         {", ".join(Config.NEWS_CATEGORIES)}
         
-        중요:
-        - 반드시 위 카테고리 중 하나만 선택
-        - 카테고리 이름만 정확히 반환(설명 불필요)
-        - 애매하면 가장 가까운 카테고리 선택        
-        """
+        반드시 위 카테고리 중 하나만 선택하고, 카테고리 값만 반환하세요."""
         
         self.categorize_prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", system_prompt),
-                ("human", "제목: {title}\n요약: {summary}\n\n이 뉴스의 카테고리:")
+                ("human", "제목: {title}\n요약: {summary}\n\n이 뉴스의 카테고리:"),
             ]
         )
         
@@ -66,17 +61,36 @@ class NewsOrganizerAgent:
                 }
             )
             
-            # LLM 응답에서 카테고리 추출
-            category = response.content.strip()
-            return category, news_item
+            #LLM 응답에서 카테고리 추출
+            raw_category = response.content.strip()
+            
+            # 따옴표 제거
+            category = raw_category.strip('"').strip("'")
+            
+            #유효성 검사 및 매칭
+            matched = False
+            for valid_cat in Config.NEWS_CATEGORIES:
+                if valid_cat in category or category in valid_cat:
+                    category = valid_cat
+                    matched = True
+                    break
+            
+            if not matched:
+                category = "기타"
+            
+            news_with_category = news_item.copy()
+            news_with_category["category"] = category
+            
+            return category, news_with_category
         
         except Exception as e:
-            print(f"분류 오류: {str(e)[:100]}.....")
-            return "기타", news_item
+            news_with_category = news_item.copy()
+            news_with_category["category"] = "기타"
+            return "기타", news_with_category
     
     async def organize_news(self, state:NewsState) -> NewsState:
         """뉴스를 카테고리 별 정리"""
-        print(f"📂 [{self.name}] 뉴스 분류 시작\n")
+        print(f"[{self.name}] 뉴스 분류 시작\n")
         
         summarized_news = state.summarized_news
         total_news = len(summarized_news)
